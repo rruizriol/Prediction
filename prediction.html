@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+
+<title>Machine Learning project</title>
+
+
+
+
+
+<style type="text/css">
+body, td {
+   font-family: sans-serif;
+   background-color: white;
+   font-size: 13px;
+}
+
+body {
+  max-width: 800px;
+  margin: auto;
+  padding: 1em;
+  line-height: 20px;
+}
+
+tt, code, pre {
+   font-family: 'DejaVu Sans Mono', 'Droid Sans Mono', 'Lucida Console', Consolas, Monaco, monospace;
+}
+
+h1 {
+   font-size:2.2em;
+}
+
+h2 {
+   font-size:1.8em;
+}
+
+h3 {
+   font-size:1.4em;
+}
+
+h4 {
+   font-size:1.0em;
+}
+
+h5 {
+   font-size:0.9em;
+}
+
+h6 {
+   font-size:0.8em;
+}
+
+a:visited {
+   color: rgb(50%, 0%, 50%);
+}
+
+pre, img {
+  max-width: 100%;
+}
+
+pre code {
+   display: block; padding: 0.5em;
+}
+
+code {
+  font-size: 92%;
+  border: 1px solid #ccc;
+}
+
+code[class] {
+  background-color: #F8F8F8;
+}
+
+table, td, th {
+  border: none;
+}
+
+blockquote {
+   color:#666666;
+   margin:0;
+   padding-left: 1em;
+   border-left: 0.5em #EEE solid;
+}
+
+hr {
+   height: 0px;
+   border-bottom: none;
+   border-top-width: thin;
+   border-top-style: dotted;
+   border-top-color: #999999;
+}
+
+@media print {
+   * {
+      background: transparent !important;
+      color: black !important;
+      filter:none !important;
+      -ms-filter: none !important;
+   }
+
+   body {
+      font-size:12pt;
+      max-width:100%;
+   }
+
+   a, a:visited {
+      text-decoration: underline;
+   }
+
+   hr {
+      visibility: hidden;
+      page-break-before: always;
+   }
+
+   pre, blockquote {
+      padding-right: 1em;
+      page-break-inside: avoid;
+   }
+
+   tr, img {
+      page-break-inside: avoid;
+   }
+
+   img {
+      max-width: 100% !important;
+   }
+
+   @page :left {
+      margin: 15mm 20mm 15mm 10mm;
+   }
+
+   @page :right {
+      margin: 15mm 10mm 15mm 20mm;
+   }
+
+   p, h2, h3 {
+      orphans: 3; widows: 3;
+   }
+
+   h2, h3 {
+      page-break-after: avoid;
+   }
+}
+</style>
+
+
+
+</head>
+
+<body>
+<h1>Machine Learning project</h1>
+
+<h2>Abstract</h2>
+
+<p>Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. The goal of this project is to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information about the data is available <a href="http://groupware.les.inf.puc-rio.br/har">here.</a></p>
+
+<h2>Data</h2>
+
+<p>Load the caret library.</p>
+
+<pre><code class="r">library(caret)
+</code></pre>
+
+<p>Lad the training and the test dataset.</p>
+
+<pre><code class="r">training_data &lt;- read.csv(&quot;pml-training.csv&quot;, header = TRUE, na.strings = &quot;&quot;)
+testing_data &lt;- read.csv(&quot;pml-testing.csv&quot;, header = TRUE, na.strings = &quot;&quot;)
+</code></pre>
+
+<h2>Exploratory Data Analysis</h2>
+
+<p>Display the dimensions for the two datasets.</p>
+
+<pre><code class="r">dim(training_data)
+</code></pre>
+
+<pre><code>## [1] 19622   160
+</code></pre>
+
+<p>Reduce the information, removing the  variables with NA values. There are some variables with suject and time information, those will be deleted too.</p>
+
+<pre><code class="r"># Delete columns with NAs
+training &lt;- training_data
+training[training == &quot;&quot; | training == &quot;NA&quot;] &lt;- NA
+indexes &lt;- which(colSums(is.na(training)) != 0)
+training &lt;- training[, -indexes]
+
+# Delete not meaningful columns (name, time, etc)
+training &lt;- training[, -(1:7)]
+</code></pre>
+
+<h2>Training and validation datasets</h2>
+
+<p>In order to cross-validate our data, a validated dataset will be created.</p>
+
+<pre><code class="r"># Separate in training and validation sets
+inTraining &lt;- createDataPartition(y = training$classe, p = 0.7, list = FALSE)
+training &lt;- training[inTraining, ]
+validation &lt;- training[-inTraining, ]
+</code></pre>
+
+<h2>Model training</h2>
+
+<p>A model will be trained using Random Forest to predict the class of the dataset</p>
+
+<pre><code class="r">model &lt;- train(classe ~ ., data = training, method = &quot;rf&quot;, tuneLength = 1, ntree = 25)
+</code></pre>
+
+<pre><code>## Error: connection is not open
+</code></pre>
+
+<h2>Model evaluation</h2>
+
+<p>In order to evaluate the model, the confusion matrix is computed.</p>
+
+<pre><code class="r">confusionMatrix(predict(model, validation), validation$classe)
+</code></pre>
+
+<pre><code>## Confusion Matrix and Statistics
+## 
+##           Reference
+## Prediction    A    B    C    D    E
+##          A 1184    3    0    0    0
+##          B    0  784    0    0    1
+##          C    0    0  716    1    0
+##          D    0    0    0  656    1
+##          E    0    0    0    0  775
+## 
+## Overall Statistics
+##                                         
+##                Accuracy : 0.999         
+##                  95% CI : (0.997, 0.999)
+##     No Information Rate : 0.287         
+##     P-Value [Acc &gt; NIR] : &lt;2e-16        
+##                                         
+##                   Kappa : 0.998         
+##  Mcnemar&#39;s Test P-Value : NA            
+## 
+## Statistics by Class:
+## 
+##                      Class: A Class: B Class: C Class: D Class: E
+## Sensitivity             1.000    0.996    1.000    0.998    0.997
+## Specificity             0.999    1.000    1.000    1.000    1.000
+## Pos Pred Value          0.997    0.999    0.999    0.998    1.000
+## Neg Pred Value          1.000    0.999    1.000    1.000    0.999
+## Prevalence              0.287    0.191    0.174    0.159    0.189
+## Detection Rate          0.287    0.190    0.174    0.159    0.188
+## Detection Prevalence    0.288    0.190    0.174    0.159    0.188
+## Balanced Accuracy       0.999    0.998    1.000    0.999    0.999
+</code></pre>
+
+<h2>Testing data</h2>
+
+<p>Classified the testing data.</p>
+
+<pre><code class="r">predict(model, testing_data)
+</code></pre>
+
+<pre><code>##  [1] B A B A A E D B A A B C B A E E A B B B
+## Levels: A B C D E
+</code></pre>
+
+</body>
+
+</html>
