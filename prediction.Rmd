@@ -1,0 +1,81 @@
+Machine Learning project
+=========================================================
+
+## Abstract
+
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. The goal of this project is to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information about the data is available [here.](http://groupware.les.inf.puc-rio.br/har)
+
+## Data
+
+Load the caret library.
+
+```{r}
+library(caret)
+```
+
+Lad the training and the test dataset.
+
+```{r, cache=TRUE}
+training_data<-read.csv("pml-training.csv", header=TRUE, na.strings="")
+testing_data<-read.csv("pml-testing.csv", header=TRUE, na.strings="")
+```
+
+## Exploratory Data Analysis
+
+Display the dimensions for the two datasets.
+
+```{r}
+dim(training_data)
+```
+
+Reduce the information, removing the  variables with NA values. There are some variables with suject and time information, those will be deleted too.
+
+```{r}
+#Delete columns with NAs
+training<-training_data
+training[training == '' | training == 'NA'] <- NA
+indexes<-which(colSums(is.na(training))!=0)
+training<-training[, -indexes]
+
+#Delete not meaningful columns (name, time, etc)
+training<-training[,-(1:7)]
+```
+
+## Training and validation datasets
+
+In order to cross-validate our data, a validated dataset will be created.
+
+```{r}
+#Separate in training and validation sets
+inTraining<-createDataPartition(y=training$classe,
+                                p=0.70,
+                                list=FALSE)
+training<-training[inTraining,]
+validation<-training[-inTraining,]
+```
+
+## Model training
+
+A model will be trained using Random Forest to predict the class of the dataset
+
+```{r, cache=TRUE}
+model <- train(classe~., data=training, method = "rf",
+               tuneLength = 1, ntree = 25)
+```
+
+## Model evaluation
+
+In order to evaluate the model, the confusion matrix is computed.
+
+```{r}
+confusionMatrix(predict(model, validation), validation$classe)
+
+```
+
+## Testing data
+
+Classified the testing data.
+
+```{r}
+predict(model, testing_data)
+```
